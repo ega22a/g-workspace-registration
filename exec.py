@@ -9,7 +9,7 @@ from google.auth.transport.requests import Request
 from PyQt5 import QtWidgets
 import sys
 # Импорт форм
-from formsMainForm import Ui_mainForm
+from form_mainForm import Ui_mainForm
 from form_dialogJSONCreds import Ui_formJSONCreds
 from form_alert import Ui_formAlert
 
