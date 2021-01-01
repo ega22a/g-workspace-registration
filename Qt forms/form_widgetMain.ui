@@ -46,31 +46,6 @@
       <string>Организационные подразделения</string>
      </property>
     </column>
-    <item>
-     <property name="text">
-      <string>Корень</string>
-     </property>
-     <item>
-      <property name="text">
-       <string>Студенты</string>
-      </property>
-      <item>
-       <property name="text">
-        <string>Очное отделение</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>Заочное отделение</string>
-       </property>
-      </item>
-     </item>
-     <item>
-      <property name="text">
-       <string>Работники</string>
-      </property>
-     </item>
-    </item>
    </widget>
    <widget class="QTableWidget" name="tableUsers">
     <property name="geometry">
@@ -129,31 +104,75 @@
      <property name="title">
       <string>Электронная почта</string>
      </property>
-     <addaction name="action_2"/>
-     <addaction name="action_3"/>
+     <addaction name="actionEmailCheckConnect"/>
+     <addaction name="actionEmailSettings"/>
     </widget>
     <addaction name="menu_2"/>
-    <addaction name="actionGoogle_Workspace"/>
+    <addaction name="actionGoogleWorkspace"/>
+    <addaction name="separator"/>
+    <addaction name="actionDataUpdate"/>
    </widget>
    <addaction name="menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="action_2">
+  <action name="actionEmailCheckConnect">
    <property name="text">
     <string>Проверка подключения</string>
    </property>
   </action>
-  <action name="action_3">
+  <action name="actionEmailSettings">
    <property name="text">
     <string>Настройка</string>
    </property>
   </action>
-  <action name="actionGoogle_Workspace">
+  <action name="actionGoogleWorkspace">
    <property name="text">
     <string>Google Workspace</string>
    </property>
   </action>
+  <action name="actionDataUpdate">
+   <property name="text">
+    <string>Обновить данные</string>
+   </property>
+  </action>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>actionDataUpdate</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>mainForm</receiver>
+   <slot>actionUpdateData_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>treeOrgUnits</sender>
+   <signal>itemClicked(QTreeWidgetItem*,int)</signal>
+   <receiver>mainForm</receiver>
+   <slot>treeOrgUnits_itemSelected()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>137</x>
+     <y>297</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>actionUpdateData_triggered()</slot>
+  <slot>treeOrgUnits_itemSelected()</slot>
+ </slots>
 </ui>
