@@ -7,11 +7,12 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from PyQt5 import QtWidgets, QtCore
-import sys
+import sys, smtplib, json
 # Импорт форм
 from form_mainForm import Ui_mainForm
 from form_dialogJSONCreds import Ui_formJSONCreds
 from form_alert import Ui_formAlert
+from form_emailSettings import Ui_form_emailSettings
 
 # Инициализация констант
 SCOPES = [
@@ -19,14 +20,18 @@ SCOPES = [
     'https://www.googleapis.com/auth/admin.directory.orgunit'
     ]
 CREDENTIALS = 'credentials.json'
+SETTINGS = 'settings.json'
 EXEC_DIRECTORY = os.path.dirname(__file__)
 DIRECTORY_API = None
 PAYLOAD = {
-    'orgUnits': None
+    'orgUnits': None,
+    'settings': None
 }
+EMAIL = None
 application = None
 _dialogAlert = None
 _dialogJSON = None
+_emailSettings = None
 
 # Рекурсивная функция создания организационных подразделений
 def collectOrgUnits(_orgUnits = None, _qTree = None):
@@ -67,8 +72,7 @@ def directoryAPI_exec():
                 creds = flow.run_local_server(port=0)
             with open('rick.pickle', 'wb') as token:
                 pickle.dump(creds, token)
-        service = build('admin', 'directory_v1', credentials=creds)
-        return service
+        return build('admin', 'directory_v1', credentials=creds)
     else:
         return False
 
@@ -91,6 +95,25 @@ class execute(QtWidgets.QMainWindow):
         _orgPath.reverse()
         _orgPath =  '/' + '/'.join(_orgPath)
         print(_orgPath)
+    def actionEmailSettings_triggered(self):
+        _emailSettings.exec()
+
+# Инициализация формы настройки файла электронной почты
+class dialogEmailSettings(QtWidgets.QDialog):
+    def __init__(self):
+        super(dialogEmailSettings, self).__init__()
+        self.ui = Ui_form_emailSettings()
+        self.ui.setupUi(self)
+    def buttonSave_clicked(self):
+        if PAYLOAD.get('settings') == None:
+            if (self.ui.editLogin.text() != '') & (self.ui.editPassword.text() != '') & (self.ui.editSMTPAddress.text() != '') & (self.ui.editSMTPPort.text() != ''):
+                print('do something')
+            else:
+                _dialogAlert.ui.labelMessage.setText('Все поля должны быть заполнены для сохранения!')
+                _dialogAlert.exec()
+        else:
+            print("Chto delat', ya ne znayu.")
+
 # Инициализация формы предупреждения
 class dialogAlert(QtWidgets.QDialog):
     def __init__(self):
@@ -100,6 +123,7 @@ class dialogAlert(QtWidgets.QDialog):
     def buttonOk_clicked(self):
         self.hide()
         self.ui.labelMessage.setText("")
+
 # Инициализация формы загрузки CREDS-файла
 class dialogJSONCreds(QtWidgets.QDialog):
     def __init__(self):
@@ -114,14 +138,13 @@ class dialogJSONCreds(QtWidgets.QDialog):
             copyfile(filename[0], CREDENTIALS)
     def buttonSave_clicked(self):
         try:
-            DIRECTORY_API = directoryAPI_exec()
+            directoryAPI_exec()
         except ValueError:
             _dialogAlert.ui.labelMessage.setText("Предоставленный файл полномочий не обладает всеми полномочиями, либо он некорректный! Попробуйте ещё раз.")
             os.remove(CREDENTIALS)
             _dialogAlert.exec()
         else:
-            self.hide()
-            application.show()
+            self.close()
 
 # Конечная инициализация переменных оконных приложений
 app = QtWidgets.QApplication([])
@@ -129,6 +152,7 @@ app = QtWidgets.QApplication([])
 application = execute()
 _dialogAlert = dialogAlert()
 _dialogJSON = dialogJSONCreds()
+_emailSettings = dialogEmailSettings()
 
 # Подпрограмма запуска оконного приложения
 try:
@@ -145,6 +169,13 @@ else:
             _dialogAlert.show()
         else:
             PAYLOAD.update({'orgUnits': collectOrgUnits(_orgUnits=results.get('organizationUnits'), _qTree = application.ui.treeOrgUnits)})
-            application.show()
+            if (checkFileExsist(SETTINGS)):
+                _thumbSettings = open(SETTINGS, 'r')
+                PAYLOAD.update({'settings': json.load(_thumbSettings)})
+                _thumbSettings.close()
+                print(PAYLOAD)
+                application.show()
+            else:
+                _emailSettings.show()
 
 sys.exit(app.exec())

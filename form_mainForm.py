@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'form_widgetMain.ui'
+# Form implementation generated from reading ui file 'Qt forms/form_widgetMain.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.2
 #
@@ -21,11 +21,11 @@ class Ui_mainForm(object):
         self.centralwidget = QtWidgets.QWidget(mainForm)
         self.centralwidget.setObjectName("centralwidget")
         self.treeOrgUnits = QtWidgets.QTreeWidget(self.centralwidget)
-        self.treeOrgUnits.setGeometry(QtCore.QRect(10, 10, 256, 531))
+        self.treeOrgUnits.setGeometry(QtCore.QRect(10, 10, 256, 561))
         self.treeOrgUnits.setColumnCount(1)
         self.treeOrgUnits.setObjectName("treeOrgUnits")
         self.tableUsers = QtWidgets.QTableWidget(self.centralwidget)
-        self.tableUsers.setGeometry(QtCore.QRect(280, 10, 511, 531))
+        self.tableUsers.setGeometry(QtCore.QRect(280, 10, 511, 561))
         self.tableUsers.setObjectName("tableUsers")
         self.tableUsers.setColumnCount(4)
         self.tableUsers.setRowCount(0)
@@ -49,9 +49,6 @@ class Ui_mainForm(object):
         self.menu_2 = QtWidgets.QMenu(self.menu)
         self.menu_2.setObjectName("menu_2")
         mainForm.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(mainForm)
-        self.statusbar.setObjectName("statusbar")
-        mainForm.setStatusBar(self.statusbar)
         self.actionEmailCheckConnect = QtWidgets.QAction(mainForm)
         self.actionEmailCheckConnect.setObjectName("actionEmailCheckConnect")
         self.actionEmailSettings = QtWidgets.QAction(mainForm)
@@ -69,8 +66,9 @@ class Ui_mainForm(object):
         self.menubar.addAction(self.menu.menuAction())
 
         self.retranslateUi(mainForm)
-        self.actionDataUpdate.triggered['bool'].connect(mainForm.actionUpdateData_triggered)
+        self.actionDataUpdate.triggered.connect(mainForm.actionUpdateData_triggered)
         self.treeOrgUnits.itemClicked['QTreeWidgetItem*','int'].connect(mainForm.treeOrgUnits_itemSelected)
+        self.actionEmailSettings.triggered.connect(mainForm.actionEmailSettings_triggered)
         QtCore.QMetaObject.connectSlotsByName(mainForm)
 
     def retranslateUi(self, mainForm):

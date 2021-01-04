@@ -35,7 +35,7 @@
       <x>10</x>
       <y>10</y>
       <width>256</width>
-      <height>531</height>
+      <height>561</height>
      </rect>
     </property>
     <property name="columnCount">
@@ -53,7 +53,7 @@
       <x>280</x>
       <y>10</y>
       <width>511</width>
-      <height>531</height>
+      <height>561</height>
      </rect>
     </property>
     <attribute name="horizontalHeaderDefaultSectionSize">
@@ -114,7 +114,6 @@
    </widget>
    <addaction name="menu"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <action name="actionEmailCheckConnect">
    <property name="text">
     <string>Проверка подключения</string>
@@ -140,7 +139,7 @@
  <connections>
   <connection>
    <sender>actionDataUpdate</sender>
-   <signal>triggered(bool)</signal>
+   <signal>triggered()</signal>
    <receiver>mainForm</receiver>
    <slot>actionUpdateData_triggered()</slot>
    <hints>
@@ -170,9 +169,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionEmailSettings</sender>
+   <signal>triggered()</signal>
+   <receiver>mainForm</receiver>
+   <slot>actionEmailSettings_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>actionUpdateData_triggered()</slot>
   <slot>treeOrgUnits_itemSelected()</slot>
+  <slot>actionEmailSettings_triggered()</slot>
  </slots>
 </ui>
