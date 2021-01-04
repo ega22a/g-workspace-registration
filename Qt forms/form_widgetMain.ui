@@ -185,10 +185,27 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionEmailCheckConnect</sender>
+   <signal>triggered()</signal>
+   <receiver>mainForm</receiver>
+   <slot>actionEmailCheckConnect_triggered()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>actionUpdateData_triggered()</slot>
   <slot>treeOrgUnits_itemSelected()</slot>
   <slot>actionEmailSettings_triggered()</slot>
+  <slot>actionEmailCheckConnect_triggered()</slot>
  </slots>
 </ui>

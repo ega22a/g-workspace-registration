@@ -69,6 +69,7 @@ class Ui_mainForm(object):
         self.actionDataUpdate.triggered.connect(mainForm.actionUpdateData_triggered)
         self.treeOrgUnits.itemClicked['QTreeWidgetItem*','int'].connect(mainForm.treeOrgUnits_itemSelected)
         self.actionEmailSettings.triggered.connect(mainForm.actionEmailSettings_triggered)
+        self.actionEmailCheckConnect.triggered.connect(mainForm.actionEmailCheckConnect_triggered)
         QtCore.QMetaObject.connectSlotsByName(mainForm)
 
     def retranslateUi(self, mainForm):
