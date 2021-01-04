@@ -19,73 +19,92 @@
     <height>600</height>
    </size>
   </property>
-  <property name="maximumSize">
-   <size>
-    <width>800</width>
-    <height>600</height>
-   </size>
-  </property>
   <property name="windowTitle">
    <string>Управление Google Workspace</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QTreeWidget" name="treeOrgUnits">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>256</width>
-      <height>561</height>
-     </rect>
-    </property>
-    <property name="columnCount">
-     <number>1</number>
-    </property>
-    <column>
-     <property name="text">
-      <string>Организационные подразделения</string>
-     </property>
-    </column>
-   </widget>
-   <widget class="QTableWidget" name="tableUsers">
-    <property name="geometry">
-     <rect>
-      <x>280</x>
-      <y>10</y>
-      <width>511</width>
-      <height>561</height>
-     </rect>
-    </property>
-    <attribute name="horizontalHeaderDefaultSectionSize">
-     <number>127</number>
-    </attribute>
-    <attribute name="verticalHeaderMinimumSectionSize">
-     <number>21</number>
-    </attribute>
-    <attribute name="verticalHeaderDefaultSectionSize">
-     <number>31</number>
-    </attribute>
-    <column>
-     <property name="text">
-      <string>Фамилия</string>
-     </property>
-    </column>
-    <column>
-     <property name="text">
-      <string>Имя</string>
-     </property>
-    </column>
-    <column>
-     <property name="text">
-      <string>Отчество</string>
-     </property>
-    </column>
-    <column>
-     <property name="text">
-      <string>Адрес электронной почты</string>
-     </property>
-    </column>
-   </widget>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="1">
+     <widget class="QTableWidget" name="tableUsers">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="sizeAdjustPolicy">
+       <enum>QAbstractScrollArea::AdjustToContents</enum>
+      </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="selectionBehavior">
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+      <attribute name="horizontalHeaderDefaultSectionSize">
+       <number>127</number>
+      </attribute>
+      <attribute name="verticalHeaderMinimumSectionSize">
+       <number>21</number>
+      </attribute>
+      <attribute name="verticalHeaderDefaultSectionSize">
+       <number>31</number>
+      </attribute>
+      <column>
+       <property name="text">
+        <string>Фамилия</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Имя</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Адрес электронной почты</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>ID</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QTreeWidget" name="treeOrgUnits">
+      <property name="maximumSize">
+       <size>
+        <width>350</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="columnCount">
+       <number>1</number>
+      </property>
+      <column>
+       <property name="text">
+        <string>Организационные подразделения</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QPushButton" name="buttonAddOrgUnit">
+      <property name="text">
+       <string>Добавить организационное подразделение</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QPushButton" name="buttonAddUser">
+      <property name="text">
+       <string>Добавить пользователя</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -201,11 +220,62 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>buttonAddOrgUnit</sender>
+   <signal>clicked()</signal>
+   <receiver>mainForm</receiver>
+   <slot>buttonAddOrgUnit_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>183</x>
+     <y>578</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonAddUser</sender>
+   <signal>clicked()</signal>
+   <receiver>mainForm</receiver>
+   <slot>buttonAddUser_clicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>577</x>
+     <y>578</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tableUsers</sender>
+   <signal>cellDoubleClicked(int,int)</signal>
+   <receiver>mainForm</receiver>
+   <slot>itemUsers_doubleClicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>563</x>
+     <y>295</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>actionUpdateData_triggered()</slot>
   <slot>treeOrgUnits_itemSelected()</slot>
   <slot>actionEmailSettings_triggered()</slot>
   <slot>actionEmailCheckConnect_triggered()</slot>
+  <slot>buttonAddOrgUnit_clicked()</slot>
+  <slot>buttonAddUser_clicked()</slot>
+  <slot>itemUsers_doubleClicked()</slot>
  </slots>
 </ui>
