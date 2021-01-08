@@ -1,0 +1,82 @@
+<table cellpadding="0" cellspacing="0" class="es-content" align="center"> 
+    <tr> 
+     <td align="center"> 
+      <table bgcolor="#ffffff" class="es-content-body" align="center" cellpadding="0" cellspacing="0" width="600"> 
+        <tr> 
+         <td class="es-p20t es-p20r es-p20l" align="left" style="background-position: center top"> 
+          <table cellpadding="0" cellspacing="0" width="100%"> 
+            <tr> 
+             <td width="560" align="center" valign="top"> 
+              <table cellpadding="0" cellspacing="0" width="100%" role="presentation"> 
+                <tr> 
+                 <td align="left" class="es-m-txt-c es-p10b"><h1 style="text-align: center">Приветствуем, $fullname!</h1></td> 
+                </tr> 
+                <tr> 
+                 <td align="center"><p>Добро пожаловать в дистанционные системы нашего образовательного учреждения!<br></p></td> 
+                </tr> 
+                <tr> 
+                 <td align="left"><p style="line-height: 120%"><br></p><p style="text-align: justify;line-height: 120%">В нашем образовательном учреждении мы используем следующие системы для поддержания дистанционного образования:</p> 
+                  <ol> 
+                   <li style="text-align: justify;line-height: 120%">Система дистанционного образования Moodle.</li> 
+                   <li style="text-align: justify;line-height: 120%">Облачные сервисы Google Workspace.</li> 
+                  </ol><p style="text-align: justify;line-height: 120%">Вам был присвоен новый адрес электронной почты:<br><br></p></td> 
+                </tr> 
+                <tr> 
+                 <td align="center"><p style="font-size: 18px "><strong>$newEmailAddress</strong></p></td> 
+                </tr> 
+                <tr> 
+                 <td class="es-p10b"><p style="text-align: justify"><br>Заметье, что в системе дистанционного образования Moodle ваш логин&nbsp;– первая часть адреса электронной почты, то есть, <span style="color:#FF0000">$lastname.$firstname</span>. В зависимости от того, когда вы это письмо получили, учетная запись в СДО Moodle появится на следующий день. Ниже представленны краткие инструкции для начала работы с системами (нажмите на наименования систем, это раскрывающиеся элементы).</p></td> 
+                </tr> 
+                <tr class="es-visible-amp-html-only"> 
+                 <td align="left"> 
+                  <amp-accordion animate> 
+                   <section> 
+                    <h3 class="section-title">Google Workspace</h3> 
+                    <div> 
+                     <table width="100%" cellspacing="0" cellpadding="0" role="presentation"> 
+                      <tbody class="accordion"> 
+                       <tr> 
+                        <td class="es-p10t es-p10r es-p10l"><p style="text-align: justify">По-сути, это аккаунт Google. Вы можете зайти в учетную запись на своём телефоне, а также в браузерах как в аккаунт Google. Основные сервисы, которые мы рекомендуем использовать:</p> 
+                         <ol> 
+                          <li style="text-align: justify"><a target="_blank" style="text-align: justify" href="http://mail.nttek.ru">Google Почта</a></li> 
+                          <li style="text-align: justify"><a target="_blank" style="text-align: justify" href="http://drive.nttek.ru">Google Диск и Документы</a></li> 
+                          <li style="text-align: justify"><a target="_blank" style="text-align: justify" href="http://calendar.nttek.ru">Google Календарь</a></li> 
+                          <li style="text-align: justify"><a target="_blank" style="text-align: justify" href="https://meet.google.com">Google Meet</a></li> 
+                          <li style="text-align: justify"><a target="_blank" style="text-align: justify" href="http://sites.nttek.ru">Google Сайты</a></li> 
+                         </ol></td> 
+                       </tr> 
+                       <tr> 
+                        <td align="left" class="es-p10b es-p10r es-p10l"><p>Данные для входа в Google Workspace:<br>Логин: <span style="font-family:'courier new',courier,'lucida sans typewriter','lucida typewriter',monospace"><strong>$newEmailAddress</strong></span><br>Пароль:&nbsp;<span style="font-family:'courier new',courier,'lucida sans typewriter','lucida typewriter',monospace"><strong>$newPassword</strong></span><br></p></td> 
+                       </tr> 
+                       <tr> 
+                        <td class="es-p10"><p style="text-align: justify"><strong>ВНИМАНИЕ!&nbsp;</strong>Пароль одноразовый. Если вы зайдете в учетную запись Google Workspace, система потребует сменить&nbsp;пароль. Ваш новый пароль - это также пароль от Moodle.</p></td> 
+                       </tr> 
+                     </table> 
+                    </div> 
+                   </section> 
+                   <section> 
+                    <h3 class="section-title">Moodle</h3> 
+                    <div> 
+                     <table width="100%" cellspacing="0" cellpadding="0" role="presentation"> 
+                      <tbody class="accordion"> 
+                       <tr> 
+                        <td class="es-p10"><p style="text-align: justify">Как было написано выше, <strong>учетная запись появится в СДО Moodle&nbsp;на следующий день после того, как вы получили это письмо</strong>.</p></td> 
+                       </tr> 
+                       <tr> 
+                        <td align="left" class="es-p10b es-p10r es-p10l"><p>Данные для входа в Moodle:<br>Логин: <span style="font-family:'courier new',courier,'lucida sans typewriter','lucida typewriter',monospace"><strong>$lastname.$firstname</strong></span></p><p style="text-align: justify">Пароль такой же, как и в Google Workspace. Не забывайте сперва авторизироваться в Google Workspace.</p></td> 
+                       </tr> 
+                       <tr> 
+                        <td align="left" class="es-p10b es-p10r es-p10l"><p>Система дистанционного образования Moodle доступна по <a target="_blank" href="https://moodle.nttek.ru">этой ссылке</a>.</p></td> 
+                       </tr> 
+                     </table> 
+                    </div> 
+                   </section> 
+                  </amp-accordion></td> 
+                </tr> 
+              </table></td> 
+            </tr> 
+          </table></td> 
+        </tr> 
+      </table></td> 
+    </tr> 
+  </table> 
