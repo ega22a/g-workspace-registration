@@ -35,7 +35,6 @@ PAYLOAD = {
     'orgUnits': None,
     'settings': None
 }
-EMAIL = None
 application = None
 _dialogAlert = None
 _dialogJSON = None
