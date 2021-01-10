@@ -7,7 +7,7 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from PyQt5 import QtWidgets, QtCore
-import sys, smtplib, json, ssl
+import sys, smtplib, json, ssl, random, string
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -17,10 +17,10 @@ from string import Template
 # Импорт форм
 from form_mainForm import Ui_mainForm
 from form_dialogJSONCreds import Ui_formJSONCreds
-from form_alert import Ui_formAlert
 from form_emailSettings import Ui_form_emailSettings
 from form_checkEmail import Ui_form_checkEmail
 from form_editUser import Ui_form_editUser
+from form_regUser import Ui_form_regUser
 
 # Инициализация констант
 SCOPES = [
@@ -35,12 +35,28 @@ PAYLOAD = {
     'orgUnits': None,
     'settings': None
 }
+EDITABLE_ID = None
 application = None
-_dialogAlert = None
 _dialogJSON = None
 _emailSettings = None
 _checkEmail = None
 _dialogEditUser = None
+_dialogRegUser = None
+
+# Функция генерации случайной строки
+getRandomString = lambda _length = 8: ''.join(random.choice(string.ascii_letters) for i in range(_length))
+
+# Функция создания окна подтверждения с последующим возвращением булевого ответа
+confirm = lambda _header = 'HEADER_IS_NOT_SET', _message = 'MESSAGE_IS_NOT_SET': QtWidgets.QMessageBox.question(None, _header, _message, QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes
+
+# Процедура создания окна предупреждения
+def alert(_header:str = 'HEADER_IS_NOT_SET', _message:str = 'MESSAGE_IS_NOT_SET', _type:str = 'information'):
+    if _type == 'information':
+        QtWidgets.QMessageBox.information(None, _header, _message, QtWidgets.QMessageBox.Ok)
+    elif _type == 'warning':
+        QtWidgets.QMessageBox.warning(None, _header, _message, QtWidgets.QMessageBox.Ok)
+    elif _type == 'critical':
+        QtWidgets.QMessageBox.critical(None, _header, _message, QtWidgets.QMessageBox.Ok)
 
 # Рекурсивная функция создания организационных подразделений
 def collectOrgUnits(_orgUnits = None, _qTree = None):
@@ -99,17 +115,15 @@ def sendMail(_payloads:list = None):
             _server.login(_email.get('login'), _email.get('password'))
             for _unit in _payloads:
                 _message = MIMEMultipart('alternative')
-                _message['Subject'] = _unit.get("subject")
+                _message['Subject'] = _unit.get('subject')
                 _message['From'] = formataddr((str(Header(PAYLOAD.get('settings').get('names').get('from'), 'utf-8')), _email.get('login')))
                 _message['To'] = _unit.get('to')
                 _message.attach(MIMEText(getFormattedText('email/template.mail', {'mainbody': _unit.get('message'), 'year': str(datetime.now().year)}), _subtype='html'))
                 _server.sendmail(_email.get('login'), _unit.get('to'), _message.as_string())
-            _dialogAlert.ui.labelMessage.setText("Почта в очереди была отправлена!")
-            _dialogAlert.exec()
+            alert('Успешно!', 'Почта в очереди была отправлена!')
             return True
         except Exception as e:
-            _dialogAlert.ui.labelMessage.setText(str(e))
-            _dialogAlert.exec()
+            alert('Ошибка!', str(e), 'warning')
             return False
         finally:
             _server.quit()
@@ -124,7 +138,7 @@ class execute(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
     def actionUpdateData_triggered(self):
         application.ui.treeOrgUnits.clear()
-        results = DIRECTORY_API.orgunits().list(customerId="my_customer").execute()
+        results = DIRECTORY_API.orgunits().list(customerId='my_customer').execute()
         PAYLOAD.update({'orgUnits': collectOrgUnits(_orgUnits=results.get('organizationUnits'), _qTree = application.ui.treeOrgUnits)})
     def treeOrgUnits_itemSelected(self, _item, _id):
         _orgPath = []
@@ -149,11 +163,12 @@ class execute(QtWidgets.QMainWindow):
     def actionEmailCheckConnect_triggered(self):
         _checkEmail.exec()
     def buttonAddOrgUnit_clicked(self):
-        print("Placeholder for buttonAddOrgUnit_clicked()")
+        print('Placeholder for buttonAddOrgUnit_clicked()')
     def buttonAddUser_clicked(self):
-        print("Placeholder for buttonAddUser_clicked()")
+        _dialogRegUser.exec()
     def itemUsers_doubleClicked(self, _x, _y):
-        _user = DIRECTORY_API.users().get(userKey=int(self.ui.tableUsers.item(_x, 3).text())).execute()
+        EDITABLE_ID = int(self.ui.tableUsers.item(_x, 3).text())
+        _user = DIRECTORY_API.users().get(userKey=EDITABLE_ID).execute()
         _dialogEditUser.ui.editLastName.setText(_user.get('name').get('givenName'))
         _dialogEditUser.ui.editFirstName.setText(_user.get('name').get('familyName'))
         _dialogEditUser.ui.editPrimaryEmail.setText(_user.get('primaryEmail'))
@@ -185,6 +200,7 @@ class execute(QtWidgets.QMainWindow):
             _dialogEditUser.ui.comboChangePassword.setCurrentIndex(1)
         else:
             _dialogEditUser.ui.comboChangePassword.setCurrentIndex(0)
+        _dialogEditUser.ui.editPassword.setText('****')
         _dialogEditUser.exec()
 
 
@@ -212,8 +228,7 @@ class dialogEmailSettings(QtWidgets.QDialog):
                 self.close()
                 application.show()
             else:
-                _dialogAlert.ui.labelMessage.setText('Все поля должны быть заполнены для сохранения!')
-                _dialogAlert.exec()
+                alert('Внимание!', 'Все поля должны быть заполнены для сохранения!', 'warning')
         else:
             _settings = PAYLOAD.get('settings')
             _settings.update({
@@ -229,16 +244,6 @@ class dialogEmailSettings(QtWidgets.QDialog):
             _settingsJSON.write(json.dumps(_settings))
             _settingsJSON.close()
 
-# Инициализация формы предупреждения
-class dialogAlert(QtWidgets.QDialog):
-    def __init__(self):
-        super(dialogAlert, self).__init__()
-        self.ui = Ui_formAlert()
-        self.ui.setupUi(self)
-    def buttonOk_clicked(self):
-        self.hide()
-        self.ui.labelMessage.setText("")
-
 # Инициализация формы загрузки CREDS-файла
 class dialogJSONCreds(QtWidgets.QDialog):
     def __init__(self):
@@ -246,18 +251,16 @@ class dialogJSONCreds(QtWidgets.QDialog):
         self.ui = Ui_formJSONCreds()
         self.ui.setupUi(self)
     def buttonFile_clicked(self):
-        options = QtWidgets.QFileDialog.Options()
-        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Открыть файл полномочий", "", "JSON (*.json)", options=options)
-        if filename:
-            self.ui.lineEditFile.setText(filename[0])
-            copyfile(filename[0], CREDENTIALS)
+        _filename = QtWidgets.QFileDialog.getOpenFileName(self, 'Открыть файл полномочий', '', 'JSON (*.json)', options=QtWidgets.QFileDialog.Options())
+        if _filename:
+            self.ui.lineEditFile.setText(_filename[0])
+            copyfile(_filename[0], CREDENTIALS)
     def buttonSave_clicked(self):
         try:
             directoryAPI_exec()
         except ValueError:
-            _dialogAlert.ui.labelMessage.setText("Предоставленный файл полномочий не обладает всеми полномочиями, либо он некорректный! Попробуйте ещё раз.")
+            alert('Ошибка!', 'Предоставленный файл полномочий не обладает всеми полномочиями, либо он некорректный! Попробуйте ещё раз.', 'critical')
             os.remove(CREDENTIALS)
-            _dialogAlert.exec()
         else:
             self.close()
 
@@ -275,8 +278,7 @@ class dialogCheckEmail(QtWidgets.QDialog):
                 'message': getFormattedText('email/checkConnect.mail')
             }])
         else:
-            _dialogAlert.ui.labelMessage.setText('Для того, чтобы проверить подключение, нужно ввести корректный адрес электронной почты!')
-            _dialogAlert.exec()
+            alert('Внимание!', 'Для того, чтобы проверить подключение, нужно ввести корректный адрес электронной почты!', 'warning')
 
 # Инициализация формы редактирования пользователя
 class dialogEditUser(QtWidgets.QDialog):
@@ -285,21 +287,69 @@ class dialogEditUser(QtWidgets.QDialog):
         self.ui = Ui_form_editUser()
         self.ui.setupUi(self)
     def buttonSave_clicked(self):
-        print("buttonSave_clicked")
+        print('buttonSave_clicked')
     def buttonCreatePassword_clicked(self):
-        print("buttonCreatePasswrod_clicked")
+        if confirm('Подтвердите действие', 'Вы уверены, что хотите изменить пароль пользователю? Если у пользователя указан запасной адрес электронной почты, то ему придет письмо с новым паролем.\nТакже, пункт "Сменить пароль при следующем входе" будет установлен в значении "Да".'):
+            self.ui.editPassword.setText(getRandomString(10))
+            self.ui.comboChangePassword.setCurrentIndex(1)
     def buttonCreateEmployeeId_clicked(self):
-        print("buttinCreateEmployeeId_clicked")
+        if PAYLOAD.get('settings').get('employeeIdMask') != None:
+            print('create employee id...')
+        else:
+            alert('Внимание!', 'Вы не можете создать уникальный идентификатор работника, т.к. у вас нет маски генерации уникального идентификатора работника!', 'warning')
+
+# Инициализация формы регистрации пользователя или пользователей
+class dialogRegUser(QtWidgets.QDialog):
+    def __init__(self):
+        super(dialogRegUser, self).__init__()
+        self.ui = Ui_form_regUser()
+        self.ui.setupUi(self)
+    def buttonCreateEmployeeId_clicked(self):
+        if PAYLOAD.get('settings').get('employeeIdMask') != None:
+            print('create employee id...')
+        else:
+            alert('Внимание!', 'Вы не можете создать уникальный идентификатор работника, т.к. у вас нет маски генерации уникального идентификатора работника!', 'warning')
+    def buttonRegistration_clicked(self):
+        print('buttonRegistration_clicked()')
+    def buttonCSVSearch_clicked(self):
+        _filename = QtWidgets.QFileDialog.getOpenFileName(self, 'Открыть файл с пользователями', '', 'CSV (*.csv)', options=QtWidgets.QFileDialog.Options())
+        if _filename:
+            self.ui.labelCSVSearch.setText(_filename[0])
+    def buttonAdditionalInfo_clicked(self):
+        alert('Информация о регистрации через CSV-таблицу', """
+        <html>
+            <head/><body>
+                <p>Для регистрации пользователей через CSV-таблицу обязательно нужно определить следующие колонки (первая строка отводится под заголовки):</p>
+                <ol>
+                    <li><i>lastname</i> - фамилия регистрируемого пользователя;</li>
+                    <li><i>firstname</i> - имя регистрируемого пользователя;</li>
+                    <li><i>recoveryEmail</i> - запасной адрес электронной почты (не из основного домена). На него придет письмо с автоматической рассылкой;</li>
+                    <li><i>primaryEmail</i> - новый адрес электронной почты на основном домене (например, "<i>example.com</i>"). Если вы не хотите создавать адреса вручную, то можете у первого регистрируемого пользователя указать основной домен. Программа автоматически создаст всем последующим пользователям адрес электронной почты, который будет выглядеть как <i><b>lastname.firstname@example.com</b></i>. Вся кириллица будет представлена в траслитерации;</li>
+                    <li><i>password</i> - если вы не хотите создавать одноразовые пароли вручную, то вы можете у первого регистрируемого пользователя узказать слово <i><b>auto</b></i>;</li>
+                    <li><i>orgUnitPath</i> - указываете иерархию организационного подразделения с корня. Пример: <b><i>/Работники/Бухгалтерия/Расчетный отдел</i></b>.</li>
+                </ol>
+                <p>Дополнительные поля для регистрации пользователей:</p>
+                <ol>
+                    <li><i>recoveryPhone</i> - номер мобильного телефона. Обязательно в формате: <b><i>+7 (000) 000 00-00</i></b>;</li>
+                    <li><i>employeeId</i> - уникальный идентификатор работника. Вы можете ввести значения вручную (из ваших систем аутентификации), либо же вы можете сгенерировать номер автоматически, указав у первого регистрируемого пользователя слово <b><i>auto</i></b>;</li>
+                    <li><i>workAddress</i> - рабочий адрес работника. Если адресов несколько, то адреса указывайте в двойных кавычках, разделенными запятыми;</li>
+                    <li><i>homeAddress</i> - домашний адрес работника. Если адресов несколько, то адреса указывайте в двойных кавычках, разделенными запятыми;</li>
+                    <li><i>changePassword</i> - укажите <b><i>FALSE</i></b>, если вы хотите, чтобы при следующем входе система запросила смену пароля. В противном случае, ничего не указывайте, либо пишите <b><i>TRUE</i></b>;</li>
+                    <li><i>employeeStatus</i> - статус работника. Может быть <b><i>Active</i></b> (Активный), <b><i>Suspended</i></b> (Заблокированный) и <b><i>Achived</i></b> (Архивированный). По умолчанию - <b><i>Active</i></b></li>
+                </ol>
+            </body>
+        </html>
+        """)
 
 # Конечная инициализация переменных оконных приложений
 app = QtWidgets.QApplication([])
 
 application = execute()
-_dialogAlert = dialogAlert()
 _dialogJSON = dialogJSONCreds()
 _emailSettings = dialogEmailSettings()
 _checkEmail = dialogCheckEmail()
 _dialogEditUser = dialogEditUser()
+_dialogRegUser = dialogRegUser()
 
 # Подпрограмма запуска оконного приложения
 try:
@@ -310,10 +360,9 @@ else:
     if not DIRECTORY_API:
         _dialogJSON.show()
     else:
-        results = DIRECTORY_API.orgunits().list(customerId="my_customer").execute()
+        results = DIRECTORY_API.orgunits().list(customerId='my_customer').execute()
         if not results.get('organizationUnits'):
-            _dialogAlert.ui.labelMessage.setText("В вашем домене Google Workspace не создано ни одного огранизационного подразделения. Работа приложения невозможна.")
-            _dialogAlert.show()
+            alert('Ошибка!', 'В вашем домене Google Workspace не создано ни одного огранизационного подразделения. Работа приложения невозможна.', 'critical')
         else:
             PAYLOAD.update({'orgUnits': collectOrgUnits(_orgUnits=results.get('organizationUnits'), _qTree = application.ui.treeOrgUnits)})
             if (checkFileExsist(SETTINGS)):
@@ -326,7 +375,7 @@ else:
                 _email = PAYLOAD.get('settings').get('email')
                 _emailSettings.ui.editLogin.setText(_email.get('login'))
                 _emailSettings.ui.editPassword.setText(_email.get('password'))
-                _emailSettings.ui.editSMTPAddress.setText(_email.get("address"))
+                _emailSettings.ui.editSMTPAddress.setText(_email.get('address'))
                 _emailSettings.ui.editSMTPPort.setText(_email.get('port'))
 
             else:
