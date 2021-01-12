@@ -100,7 +100,7 @@
     <item row="1" column="1">
      <widget class="QPushButton" name="buttonAddUser">
       <property name="text">
-       <string>Добавить пользователя</string>
+       <string>Добавить пользователей</string>
       </property>
      </widget>
     </item>

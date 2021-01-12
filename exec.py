@@ -7,7 +7,7 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from PyQt5 import QtWidgets, QtCore
-import sys, smtplib, json, ssl, random, string
+import sys, smtplib, json, ssl, random, string, webbrowser, csv
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -29,7 +29,6 @@ SCOPES = [
     ]
 CREDENTIALS = 'credentials.json'
 SETTINGS = 'settings.json'
-EXEC_DIRECTORY = os.path.dirname(__file__)
 DIRECTORY_API = None
 PAYLOAD = {
     'orgUnits': None,
@@ -42,6 +41,9 @@ _emailSettings = None
 _checkEmail = None
 _dialogEditUser = None
 _dialogRegUser = None
+
+# Функция получения полного пути до файла
+getFullPath = lambda _path = '': os.path.join(os.path.dirname(__file__), _path)
 
 # Функция генерации случайной строки
 getRandomString = lambda _length = 8: ''.join(random.choice(string.ascii_letters) for i in range(_length))
@@ -63,13 +65,13 @@ def collectOrgUnits(_orgUnits = None, _qTree = None):
     _returned = []
     for orgUnit in _orgUnits:
         _secReturn = {
-            'name': orgUnit.get('name'),
-            'orgUnitId': orgUnit.get('orgUnitId'),
-            'orgUnitPath': orgUnit.get('orgUnitPath'),
+            'name': orgUnit['name'],
+            'orgUnitId': orgUnit['orgUnitId'],
+            'orgUnitPath': orgUnit['orgUnitPath'],
             'in': None
         }
         _newTree = QtWidgets.QTreeWidgetItem(_qTree)
-        _newTree.setText(0, orgUnit.get('name'))
+        _newTree.setText(0, orgUnit['name'])
         _check = DIRECTORY_API.orgunits().list(customerId='my_customer', orgUnitPath=orgUnit.get('orgUnitPath')).execute()
         if _check.get('organizationUnits'):
             _secReturn.update({'in': collectOrgUnits(_orgUnits = _check.get('organizationUnits'), _qTree = _newTree)})
@@ -77,7 +79,7 @@ def collectOrgUnits(_orgUnits = None, _qTree = None):
     return _returned
 
 # Функция проверки существования файла (относительные пути)
-checkFileExsist = lambda _file: os.path.isfile(os.path.join(EXEC_DIRECTORY, _file))
+checkFileExsist = lambda _file: os.path.isfile(getFullPath(_file))
 
 # Инициализация подключения к Directory API (Google Workspace)
 def directoryAPI_exec():
@@ -109,17 +111,17 @@ def getFormattedText(_filename:str = None, _args:dict = None):
 # Функция отправки писем через TLS SMTP
 def sendMail(_payloads:list = None):
     if (PAYLOAD.get('settings') != None) & (_payloads != None):
-        _emailSettings = PAYLOAD.get('settings').get('email')
+        _emailSettings = PAYLOAD['settings']['email']
         try:
-            _server = smtplib.SMTP_SSL(_email.get('address'), int(_email.get('port')))
-            _server.login(_email.get('login'), _email.get('password'))
+            _server = smtplib.SMTP_SSL(_email['address'], int(_email['port']))
+            _server.login(_email['login'], _email['password'])
             for _unit in _payloads:
                 _message = MIMEMultipart('alternative')
-                _message['Subject'] = _unit.get('subject')
-                _message['From'] = formataddr((str(Header(PAYLOAD.get('settings').get('names').get('from'), 'utf-8')), _email.get('login')))
-                _message['To'] = _unit.get('to')
-                _message.attach(MIMEText(getFormattedText('email/template.mail', {'mainbody': _unit.get('message'), 'year': str(datetime.now().year)}), _subtype='html'))
-                _server.sendmail(_email.get('login'), _unit.get('to'), _message.as_string())
+                _message['Subject'] = _unit['subject']
+                _message['From'] = formataddr((str(Header(PAYLOAD['settings']['names']['from'], 'utf-8')), _email['login']))
+                _message['To'] = _unit['to']
+                _message.attach(MIMEText(getFormattedText('email/template.mail', {'mainbody': _unit['message'], 'year': str(datetime.now().year)}), _subtype='html'))
+                _server.sendmail(_email['login'], _unit['to'], _message.as_string())
             alert('Успешно!', 'Почта в очереди была отправлена!')
             return True
         except Exception as e:
@@ -127,6 +129,53 @@ def sendMail(_payloads:list = None):
             return False
         finally:
             _server.quit()
+    else:
+        return False
+
+# Функция транслитерации кирилицы
+def transliterateCyrilic(_string:str = ''):
+    _alphabet = {
+        'а': 'a',
+        'б': 'b',
+        'в': 'v',
+        'г': 'g',
+        'д': 'd',
+        'е': 'e',
+        'ё': 'e',
+        'ж': 'zh',
+        'з': 'z',
+        'и': 'i',
+        'й': 'ii',
+        'к': 'k',
+        'л': 'l',
+        'м': 'm',
+        'н': 'n',
+        'о': 'o',
+        'п': 'p',
+        'р': 'r',
+        'с': 's',
+        'т': 't',
+        'у': 'y',
+        'ф': 'f',
+        'х': 'x',
+        'ц': 'c',
+        'ч': 'ch',
+        'ш': 'sh',
+        'щ': 'sh',
+        'ъ': '',
+        'ы': 'i',
+        'ь': '',
+        'э': 'e',
+        'ю': 'yu',
+        'я': 'ya',
+        ' ': '.',
+        '-': '.'
+    }
+    if len(_string) != 0:
+        _returned = ''
+        for _char in _string.lower():
+            _returned += _alphabet[_char]
+        return _returned
     else:
         return False
 
@@ -151,13 +200,13 @@ class execute(QtWidgets.QMainWindow):
         # print(_orgPath)
         _users = DIRECTORY_API.users().list(customer='my_customer', query='orgUnitPath=\'{}\''.format(_orgPath)).execute()
         self.ui.tableUsers.setRowCount(0)
-        for _user in _users.get('users'):
+        for _user in _users['users']:
             _position = self.ui.tableUsers.rowCount()
             self.ui.tableUsers.insertRow(_position)
-            self.ui.tableUsers.setItem(_position, 0, QtWidgets.QTableWidgetItem(_user.get('name').get('familyName')))
-            self.ui.tableUsers.setItem(_position, 1, QtWidgets.QTableWidgetItem(_user.get('name').get('givenName')))
-            self.ui.tableUsers.setItem(_position, 2, QtWidgets.QTableWidgetItem(_user.get('primaryEmail')))
-            self.ui.tableUsers.setItem(_position, 3, QtWidgets.QTableWidgetItem(_user.get('id')))
+            self.ui.tableUsers.setItem(_position, 0, QtWidgets.QTableWidgetItem(_user['name']['familyName']))
+            self.ui.tableUsers.setItem(_position, 1, QtWidgets.QTableWidgetItem(_user['name']['givenName']))
+            self.ui.tableUsers.setItem(_position, 2, QtWidgets.QTableWidgetItem(_user['primaryEmail']))
+            self.ui.tableUsers.setItem(_position, 3, QtWidgets.QTableWidgetItem(_user['id']))
     def actionEmailSettings_triggered(self):
         _emailSettings.exec()
     def actionEmailCheckConnect_triggered(self):
@@ -169,34 +218,34 @@ class execute(QtWidgets.QMainWindow):
     def itemUsers_doubleClicked(self, _x, _y):
         EDITABLE_ID = int(self.ui.tableUsers.item(_x, 3).text())
         _user = DIRECTORY_API.users().get(userKey=EDITABLE_ID).execute()
-        _dialogEditUser.ui.editLastName.setText(_user.get('name').get('givenName'))
-        _dialogEditUser.ui.editFirstName.setText(_user.get('name').get('familyName'))
-        _dialogEditUser.ui.editPrimaryEmail.setText(_user.get('primaryEmail'))
-        _dialogEditUser.ui.editOrgUnitPath.setText(_user.get('orgUnitPath'))
-        _subRecEmail = '' if _user.get('recoveryEmail') == None else _user.get('recoveryEmail')
+        _dialogEditUser.ui.editLastName.setText(_user['name']['givenName'])
+        _dialogEditUser.ui.editFirstName.setText(_user['name']['familyName'])
+        _dialogEditUser.ui.editPrimaryEmail.setText(_user['primaryEmail'])
+        _dialogEditUser.ui.editOrgUnitPath.setText(_user['orgUnitPath'])
+        _subRecEmail = '' if _user.get('recoveryEmail') == None else _user['recoveryEmail']
         _dialogEditUser.ui.editRecoveryEmail.setText(_subRecEmail)
-        _subRecPhone = '' if _user.get('phones') == None else _user.get('phones')[0].get('value')
+        _subRecPhone = '' if _user.get('phones') == None else _user['phones'][0]['value']
         _dialogEditUser.ui.editRecoveryMobilePhone.setText(_subRecPhone)
-        _extId = '' if _user.get('externalIds') == None else _user.get('externalIds')[0].get('value')
+        _extId = '' if _user.get('externalIds') == None else _user['externalIds'][0]['value']
         _dialogEditUser.ui.editEmployeeId.setText(_extId)
         _addresses = {
             'work': '',
             'home': ''
         }
         if _user.get('addresses') != None:
-            for _address in _user.get('addresses'):
-                _addresses.update({_address.get('type'): '{}, "{}"'.format(_addresses.get(_address.get('type')), _address.get('formatted'))})
-            _addresses.update({'work': _addresses.get('work')[2:]})
-            _addresses.update({'home': _addresses.get('home')[2:]})
-        _dialogEditUser.ui.editWorkAddress.setText(_addresses.get('work'))
-        _dialogEditUser.ui.editHomeAddress.setText(_addresses.get('home'))
-        if _user.get('suspended'):
+            for _address in _user['addresses']:
+                _addresses.update({_address['type']: '{}, "{}"'.format(_addresses[_address['type']], _address['formatted'])})
+            _addresses.update({'work': _addresses['work'][2:]})
+            _addresses.update({'home': _addresses['home'][2:]})
+        _dialogEditUser.ui.editWorkAddress.setText(_addresses['work'])
+        _dialogEditUser.ui.editHomeAddress.setText(_addresses['home'])
+        if _user['suspended']:
             _dialogEditUser.ui.comboEmployeeStatus.setCurrentIndex(1)
-        elif _user.get('archived'):
+        elif _user['archived']:
             _dialogEditUser.ui.comboEmployeeStatus.setCurrentIndex(2)
         else:
             _dialogEditUser.ui.comboEmployeeStatus.setCurrentIndex(0)
-        if _user.get('changePasswordAtNextLogin'):
+        if _user['changePasswordAtNextLogin']:
             _dialogEditUser.ui.comboChangePassword.setCurrentIndex(1)
         else:
             _dialogEditUser.ui.comboChangePassword.setCurrentIndex(0)
@@ -230,7 +279,7 @@ class dialogEmailSettings(QtWidgets.QDialog):
             else:
                 alert('Внимание!', 'Все поля должны быть заполнены для сохранения!', 'warning')
         else:
-            _settings = PAYLOAD.get('settings')
+            _settings = PAYLOAD['settings']
             _settings.update({
                 'email': {
                         'address': self.ui.editSMTPAddress.text(),
@@ -293,7 +342,7 @@ class dialogEditUser(QtWidgets.QDialog):
             self.ui.editPassword.setText(getRandomString(10))
             self.ui.comboChangePassword.setCurrentIndex(1)
     def buttonCreateEmployeeId_clicked(self):
-        if PAYLOAD.get('settings').get('employeeIdMask') != None:
+        if PAYLOAD['settings'].get('employeeIdMask') != None:
             print('create employee id...')
         else:
             alert('Внимание!', 'Вы не можете создать уникальный идентификатор работника, т.к. у вас нет маски генерации уникального идентификатора работника!', 'warning')
@@ -304,42 +353,58 @@ class dialogRegUser(QtWidgets.QDialog):
         super(dialogRegUser, self).__init__()
         self.ui = Ui_form_regUser()
         self.ui.setupUi(self)
-    def buttonCreateEmployeeId_clicked(self):
-        if PAYLOAD.get('settings').get('employeeIdMask') != None:
-            print('create employee id...')
-        else:
-            alert('Внимание!', 'Вы не можете создать уникальный идентификатор работника, т.к. у вас нет маски генерации уникального идентификатора работника!', 'warning')
     def buttonRegistration_clicked(self):
-        print('buttonRegistration_clicked()')
+        if self.ui.labelCSVSearch.text() != '':
+            if checkFileExsist(self.ui.labelCSVSearch.text()):
+                    with open(self.ui.labelCSVSearch.text(), 'r') as _csv:
+                        _reader = csv.DictReader(_csv)
+                        _triggers = {
+                            'primaryEmail': '',
+                            'employeeId': '',
+                            'isFirst': True
+                        }
+                        _formattedUsers = []
+                        for _user in _reader:
+                            if _triggers['isFirst']:
+                                if (_user.get('lastname') != None) & (_user.get('firstname') != None) & (_user.get('recoveryEmail') != None) & (_user.get('primaryEmail') != None) & (_user.get('orgUnitPath') != None):
+                                    _triggers.update({
+                                        'primaryEmail': _user['primaryEmail'] if _user['primaryEmail'].find('@') == -1 else False,
+                                        'employeeId': False if _user.get('employeeId') == None else ('auto' if _user['employeeId'] == 'auto' else 'manual')
+                                    })
+                                    _triggers.update({'isFirst': False})
+                                else:
+                                    alert('Внимание!', 'Не все обязательные поля указаны в таблице!', 'warning')
+                                    break
+                            _usersPayload = {
+                                'lastname': _user['lastname'][0:1].upper() + _user['lastname'][1:].lower(),
+                                'firstname': _user['firstname'][0:1].upper() + _user['firstname'][1:].lower(),
+                                'recoveryEmail': _user['recoveryEmail'],
+                                'primaryEmail': '{}.{}@{}'.format(transliterateCyrilic(_user['lastname']), transliterateCyrilic(_user['firstname']), _triggers['primaryEmail']) if _triggers['primaryEmail'] else _user['primaryEmail'],
+                                'orgUnitPath': _user['orgUnitPath'],
+                                'pasword': getRandomString(),
+                                'recoveryPhone': _user['recoveryPhone'] if _user.get('recoveryPhone') != None else '',
+                                'employeeId': '' if not _triggers['employeeId'] else ((_user['employeeId'] if _user.get('employeeId') != None else '') if _triggers['employeeId'] == 'manual' else 'autoDef'),
+                                'workAddress': _user['workAddress'] if _user.get('workAddress') != None else '',
+                                'homeAddress': _user['homeAddress'] if _user.get('homeAddress') != None else '',
+                                'changePassword': True if _user.get('changePassword') == None else (True if _user['changePassword'] == "TRUE" else False),
+                                'employeeStatus': 'Active' if _user.get('employeeStatus') == None else ('Active' if _user['employeeStatus'] == '' else _user['employeeStatus'])
+                            }
+                            if (_usersPayload['lastname'] != '') & (_usersPayload['firstname'] != '') & (_usersPayload['recoveryEmail'] != '') & (_usersPayload['primaryEmail'] != '') & (_usersPayload['orgUnitPath'] != ''):
+                                _formattedUsers.append(_usersPayload)
+                            else:
+                                alert('Внимание!', 'У регистрируемых пользователей не хватает данных! Перепроверьте данные в таблице.', 'warning')
+                        for _user in _formattedUsers:
+                            print(_user)
+            else:
+                alert('Внимание!', 'Файл не найден!', 'warning')
+        else:
+            alert('Внимание!', 'Файл не выбран!', 'warning')
     def buttonCSVSearch_clicked(self):
         _filename = QtWidgets.QFileDialog.getOpenFileName(self, 'Открыть файл с пользователями', '', 'CSV (*.csv)', options=QtWidgets.QFileDialog.Options())
         if _filename:
             self.ui.labelCSVSearch.setText(_filename[0])
     def buttonAdditionalInfo_clicked(self):
-        alert('Информация о регистрации через CSV-таблицу', """
-        <html>
-            <head/><body>
-                <p>Для регистрации пользователей через CSV-таблицу обязательно нужно определить следующие колонки (первая строка отводится под заголовки):</p>
-                <ol>
-                    <li><i>lastname</i> - фамилия регистрируемого пользователя;</li>
-                    <li><i>firstname</i> - имя регистрируемого пользователя;</li>
-                    <li><i>recoveryEmail</i> - запасной адрес электронной почты (не из основного домена). На него придет письмо с автоматической рассылкой;</li>
-                    <li><i>primaryEmail</i> - новый адрес электронной почты на основном домене (например, "<i>example.com</i>"). Если вы не хотите создавать адреса вручную, то можете у первого регистрируемого пользователя указать основной домен. Программа автоматически создаст всем последующим пользователям адрес электронной почты, который будет выглядеть как <i><b>lastname.firstname@example.com</b></i>. Вся кириллица будет представлена в траслитерации;</li>
-                    <li><i>password</i> - если вы не хотите создавать одноразовые пароли вручную, то вы можете у первого регистрируемого пользователя узказать слово <i><b>auto</b></i>;</li>
-                    <li><i>orgUnitPath</i> - указываете иерархию организационного подразделения с корня. Пример: <b><i>/Работники/Бухгалтерия/Расчетный отдел</i></b>.</li>
-                </ol>
-                <p>Дополнительные поля для регистрации пользователей:</p>
-                <ol>
-                    <li><i>recoveryPhone</i> - номер мобильного телефона. Обязательно в формате: <b><i>+7 (000) 000 00-00</i></b>;</li>
-                    <li><i>employeeId</i> - уникальный идентификатор работника. Вы можете ввести значения вручную (из ваших систем аутентификации), либо же вы можете сгенерировать номер автоматически, указав у первого регистрируемого пользователя слово <b><i>auto</i></b>;</li>
-                    <li><i>workAddress</i> - рабочий адрес работника. Если адресов несколько, то адреса указывайте в двойных кавычках, разделенными запятыми;</li>
-                    <li><i>homeAddress</i> - домашний адрес работника. Если адресов несколько, то адреса указывайте в двойных кавычках, разделенными запятыми;</li>
-                    <li><i>changePassword</i> - укажите <b><i>FALSE</i></b>, если вы хотите, чтобы при следующем входе система запросила смену пароля. В противном случае, ничего не указывайте, либо пишите <b><i>TRUE</i></b>;</li>
-                    <li><i>employeeStatus</i> - статус работника. Может быть <b><i>Active</i></b> (Активный), <b><i>Suspended</i></b> (Заблокированный) и <b><i>Achived</i></b> (Архивированный). По умолчанию - <b><i>Active</i></b></li>
-                </ol>
-            </body>
-        </html>
-        """)
+        webbrowser.open(getFullPath('resources/help/registration.html'), new=2)
 
 # Конечная инициализация переменных оконных приложений
 app = QtWidgets.QApplication([])
@@ -372,11 +437,11 @@ else:
 
                 application.show()
 
-                _email = PAYLOAD.get('settings').get('email')
-                _emailSettings.ui.editLogin.setText(_email.get('login'))
-                _emailSettings.ui.editPassword.setText(_email.get('password'))
-                _emailSettings.ui.editSMTPAddress.setText(_email.get('address'))
-                _emailSettings.ui.editSMTPPort.setText(_email.get('port'))
+                _email = PAYLOAD['settings']['email']
+                _emailSettings.ui.editLogin.setText(_email['login'])
+                _emailSettings.ui.editPassword.setText(_email['password'])
+                _emailSettings.ui.editSMTPAddress.setText(_email['address'])
+                _emailSettings.ui.editSMTPPort.setText(_email['port'])
 
             else:
                 _emailSettings.show()

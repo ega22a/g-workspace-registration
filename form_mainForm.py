@@ -101,7 +101,7 @@ class Ui_mainForm(object):
         item.setText(_translate("mainForm", "ID"))
         self.treeOrgUnits.headerItem().setText(0, _translate("mainForm", "Организационные подразделения"))
         self.buttonAddOrgUnit.setText(_translate("mainForm", "Добавить организационное подразделение"))
-        self.buttonAddUser.setText(_translate("mainForm", "Добавить пользователя"))
+        self.buttonAddUser.setText(_translate("mainForm", "Добавить пользователей"))
         self.menu.setTitle(_translate("mainForm", "Настройки"))
         self.menu_2.setTitle(_translate("mainForm", "Электронная почта"))
         self.actionEmailCheckConnect.setText(_translate("mainForm", "Проверка подключения"))
