@@ -360,101 +360,105 @@ class dialogRegUser(QtWidgets.QDialog):
         self.ui = Ui_form_regUser()
         self.ui.setupUi(self)
     def buttonRegistration_clicked(self):
+        self.setCursor(QtCore.Qt.BusyCursor)
         if self.ui.labelCSVSearch.text() != '':
             if checkFileExsist(self.ui.labelCSVSearch.text()):
-                    with open(self.ui.labelCSVSearch.text(), 'r') as _csv:
-                        _reader = csv.DictReader(_csv)
-                        _triggers = {
-                            'primaryEmail': '',
-                            'employeeId': '',
-                            'isFirst': True
-                        }
-                        _formattedUsers = []
-                        for _user in _reader:
-                            if _triggers['isFirst']:
-                                if (_user.get('lastname') != None) & (_user.get('firstname') != None) & (_user.get('recoveryEmail') != None) & (_user.get('primaryEmail') != None) & (_user.get('orgUnitPath') != None):
-                                    _triggers.update({
-                                        'primaryEmail': _user['primaryEmail'] if _user['primaryEmail'].find('@') == -1 else False,
-                                        'employeeId': False if _user.get('employeeId') == None else ('auto' if _user['employeeId'] == 'auto' else 'manual')
-                                    })
-                                    _triggers.update({'isFirst': False})
-                                else:
-                                    alert('Внимание!', 'Не все обязательные поля указаны в таблице!', 'warning')
-                                    break
-                            _usersPayload = {
-                                'lastname': _user['lastname'][0:1].upper() + _user['lastname'][1:].lower(),
-                                'firstname': _user['firstname'][0:1].upper() + _user['firstname'][1:].lower(),
-                                'recoveryEmail': _user['recoveryEmail'],
-                                'primaryEmail': '{}.{}@{}'.format(transliterateCyrilic(_user['lastname']), transliterateCyrilic(_user['firstname']), _triggers['primaryEmail']) if _triggers['primaryEmail'] else _user['primaryEmail'],
-                                'orgUnitPath': _user['orgUnitPath'],
-                                'password': getRandomString(),
-                                'recoveryPhone': _user['recoveryPhone'] if _user.get('recoveryPhone') != None else '',
-                                'employeeId': '' if not _triggers['employeeId'] else ((_user['employeeId'] if _user.get('employeeId') != None else '') if _triggers['employeeId'] == 'manual' else 'autoDef'),
-                                'workAddress': _user['workAddress'] if _user.get('workAddress') != None else '',
-                                'homeAddress': _user['homeAddress'] if _user.get('homeAddress') != None else '',
-                                'changePassword': True if _user.get('changePassword') == None else (True if _user['changePassword'] == "TRUE" else False),
-                                'employeeStatus': 'Active' if _user.get('employeeStatus') == None else ('Active' if _user['employeeStatus'] == '' else _user['employeeStatus'][0:1].upper() + _user['employeeStatus'][1:].lower())
-                            }
-                            if (_usersPayload['lastname'] != '') & (_usersPayload['firstname'] != '') & (_usersPayload['recoveryEmail'] != '') & (_usersPayload['primaryEmail'] != '') & (_usersPayload['orgUnitPath'] != ''):
-                                _formattedUsers.append(_usersPayload)
+                with open(self.ui.labelCSVSearch.text(), 'r') as _csv:
+                    _reader = csv.DictReader(_csv)
+                    _triggers = {
+                        'primaryEmail': '',
+                        'employeeId': '',
+                        'isFirst': True
+                    }
+                    _formattedUsers = []
+                    for _user in _reader:
+                        if _triggers['isFirst']:
+                            if (_user.get('lastname') != None) & (_user.get('firstname') != None) & (_user.get('recoveryEmail') != None) & (_user.get('primaryEmail') != None) & (_user.get('orgUnitPath') != None):
+                                _triggers.update({
+                                    'primaryEmail': _user['primaryEmail'] if _user['primaryEmail'].find('@') == -1 else False,
+                                    'employeeId': False if _user.get('employeeId') == None else ('auto' if _user['employeeId'] == 'auto' else 'manual')
+                                })
+                                _triggers.update({'isFirst': False})
                             else:
-                                alert('Внимание!', 'У регистрируемых пользователей не хватает данных! Перепроверьте данные в таблице.', 'warning')
-                        _registratedUsers = []
-                        for _user in _formattedUsers:
-                            _temp = DIRECTORY_API.users().insert(body={
-                                'name': {
-                                    'givenName': _user['firstname'],
-                                    'familyName': _user['lastname']
+                                alert('Внимание!', 'Не все обязательные поля указаны в таблице!', 'warning')
+                                break
+                        _usersPayload = {
+                            'lastname': _user['lastname'][0:1].upper() + _user['lastname'][1:].lower(),
+                            'firstname': _user['firstname'][0:1].upper() + _user['firstname'][1:].lower(),
+                            'recoveryEmail': _user['recoveryEmail'],
+                            'primaryEmail': '{}.{}@{}'.format(transliterateCyrilic(_user['lastname']), transliterateCyrilic(_user['firstname']), _triggers['primaryEmail']) if _triggers['primaryEmail'] else _user['primaryEmail'],
+                            'orgUnitPath': _user['orgUnitPath'],
+                            'password': getRandomString(),
+                            'recoveryPhone': _user['recoveryPhone'] if _user.get('recoveryPhone') != None else '',
+                            'employeeId': '' if not _triggers['employeeId'] else ((_user['employeeId'] if _user.get('employeeId') != None else '') if _triggers['employeeId'] == 'manual' else 'autoDef'),
+                            'workAddress': _user['workAddress'] if _user.get('workAddress') != None else '',
+                            'homeAddress': _user['homeAddress'] if _user.get('homeAddress') != None else '',
+                            'changePassword': True if _user.get('changePassword') == None else (True if _user['changePassword'] == "TRUE" else False),
+                            'employeeStatus': 'Active' if _user.get('employeeStatus') == None else ('Active' if _user['employeeStatus'] == '' else _user['employeeStatus'][0:1].upper() + _user['employeeStatus'][1:].lower())
+                        }
+                        if (_usersPayload['lastname'] != '') & (_usersPayload['firstname'] != '') & (_usersPayload['recoveryEmail'] != '') & (_usersPayload['primaryEmail'] != '') & (_usersPayload['orgUnitPath'] != ''):
+                            _formattedUsers.append(_usersPayload)
+                        else:
+                            alert('Внимание!', 'У регистрируемых пользователей не хватает данных! Перепроверьте данные в таблице.', 'warning')
+                    _registratedUsers = []
+                    _sendMail = []
+                    for _user in _formattedUsers:
+                        _temp = DIRECTORY_API.users().insert(body={
+                            'name': {
+                                'givenName': _user['firstname'],
+                                'familyName': _user['lastname']
+                            },
+                            'primaryEmail': _user['primaryEmail'],
+                            'recoveryEmail': _user['recoveryEmail'],
+                            'recoveryPhone': _user['recoveryPhone'],
+                            'orgUnitPath': _user['orgUnitPath'],
+                            'addresses': [
+                                {
+                                    'type': 'work',
+                                    'customType': _user['workAddress']
                                 },
-                                'primaryEmail': _user['primaryEmail'],
-                                'recoveryEmail': _user['recoveryEmail'],
-                                'recoveryPhone': _user['recoveryPhone'],
-                                'orgUnitPath': _user['orgUnitPath'],
-                                'addresses': [
-                                    {
-                                        'type': 'work',
-                                        'customType': _user['workAddress']
-                                    },
-                                    {
-                                        'type': 'home',
-                                        'customType': _user['homeAddress']
-                                    }
-                                ],
-                                'password': _user['password'],
-                                'changePasswordAtNextLogin': _user['changePassword'],
-                                'externalIds': [
-                                    {
-                                        'value': _user['employeeId'],
-                                        'type': 'custom',
-                                        'customType': 'employee'
-                                    }
-                                ],
-                                'suspended': _user['employeeStatus'] == 'Suspended',
-                                'archived': _user['employeeStatus'] == 'Archived'
-                            }).execute()
-                            if _temp:
-                                _registratedUsers.append(_temp)
-                                sendMail([{
-                                    'to': _user['recoveryEmail'],
-                                    'subject': 'Добро пожаловать в экосистему колледжа!',
-                                    'message': getFormattedText('email/registration.mail', {
-                                        'newEmailAddressFull': _user['primaryEmail'],
-                                        'newEmailAddressSlice': _user['primaryEmail'].split('@')[0],
-                                        'lastname': _user['lastname'],
-                                        'firstname': _user['firstname'],
-                                        'newPassword': _user['password']
-                                    })
-                                }])
+                                {
+                                    'type': 'home',
+                                    'customType': _user['homeAddress']
+                                }
+                            ],
+                            'password': _user['password'],
+                            'changePasswordAtNextLogin': _user['changePassword'],
+                            'externalIds': [
+                                {
+                                    'value': _user['employeeId'],
+                                    'type': 'custom',
+                                    'customType': 'employee'
+                                }
+                            ],
+                            'suspended': _user['employeeStatus'] == 'Suspended',
+                            'archived': _user['employeeStatus'] == 'Archived'
+                        }).execute()
+                        if _temp:
+                            _registratedUsers.append(_temp)
+                            _sendMail.append({
+                                'to': _user['recoveryEmail'],
+                                'subject': 'Добро пожаловать в экосистему колледжа!',
+                                'message': getFormattedText('email/registration.mail', {
+                                    'newEmailAddressFull': _user['primaryEmail'],
+                                    'newEmailAddressSlice': _user['primaryEmail'].split('@')[0],
+                                    'lastname': _user['lastname'],
+                                    'firstname': _user['firstname'],
+                                    'newPassword': _user['password']
+                                })
+                            })
+                    sendMail(_sendMail)
+                    _filename = saveFile('Выберите место сохранения', 'JSON (*.json)')
+                    while _filename == ('', ''):
                         _filename = saveFile('Выберите место сохранения', 'JSON (*.json)')
-                        while _filename == ('', ''):
-                            _filename = saveFile('Выберите место сохранения', 'JSON (*.json)')
-                        with open('{}.{}'.format(_filename[0], _filename[1][8:12]), 'w') as _json:
-                            _json.write(json.dumps(_registratedUsers))
-                        alert('Работа окончена!', '<html><head/><body><p>Работа окончена!</p><p>JSON-файл с данными о добавленных пользователях сохранен по пути: <b>{}</b></p></body></html>'.format('{}.{}'.format(_filename[0], _filename[1][8:12])))
+                    with open('{}.{}'.format(_filename[0], _filename[1][8:12]), 'w') as _json:
+                        _json.write(json.dumps(_registratedUsers))
+                    alert('Работа окончена!', '<html><head/><body><p>Работа окончена!</p><p>JSON-файл с данными о добавленных пользователях сохранен по пути: <b>{}</b></p></body></html>'.format('{}.{}'.format(_filename[0], _filename[1][8:12])))
             else:
                 alert('Внимание!', 'Файл не найден!', 'warning')
         else:
             alert('Внимание!', 'Файл не выбран!', 'warning')
+        self.setCursor(QtCore.Qt.ArrowCursor)
     def buttonCSVSearch_clicked(self):
         _filename = getFile('Открыть файл с пользователями', 'CSV (*.csv)')
         if _filename:

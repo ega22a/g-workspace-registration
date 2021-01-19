@@ -15,8 +15,9 @@ class Ui_form_regUser(object):
     def setupUi(self, form_regUser):
         form_regUser.setObjectName("form_regUser")
         form_regUser.setWindowModality(QtCore.Qt.NonModal)
-        form_regUser.resize(781, 271)
-        form_regUser.setMinimumSize(QtCore.QSize(781, 271))
+        form_regUser.resize(326, 341)
+        form_regUser.setMinimumSize(QtCore.QSize(326, 341))
+        form_regUser.setMaximumSize(QtCore.QSize(326, 341))
         self.gridLayout_2 = QtWidgets.QGridLayout(form_regUser)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.gridLayout = QtWidgets.QGridLayout()
