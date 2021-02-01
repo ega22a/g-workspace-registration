@@ -360,6 +360,8 @@ class dialogRegUser(QtWidgets.QDialog):
         self.ui = Ui_form_regUser()
         self.ui.setupUi(self)
     def buttonRegistration_clicked(self):
+        # Приложение начинает стакаться в этой функции (при массовой регистрации).
+        # Пока решение такое: создать форму с полосой загрузки.
         self.setCursor(QtCore.Qt.BusyCursor)
         if self.ui.labelCSVSearch.text() != '':
             if checkFileExsist(self.ui.labelCSVSearch.text()):
