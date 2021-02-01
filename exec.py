@@ -21,6 +21,7 @@ from form_emailSettings import Ui_form_emailSettings
 from form_checkEmail import Ui_form_checkEmail
 from form_editUser import Ui_form_editUser
 from form_regUser import Ui_form_regUser
+from form_loader import Ui_form_loader
 
 # Инициализация констант
 SCOPES = [
@@ -41,6 +42,7 @@ _emailSettings = None
 _checkEmail = None
 _dialogEditUser = None
 _dialogRegUser = None
+_loader = None
 
 # Функция получения полного пути до файла
 getFullPath = lambda _path = '': os.path.join(os.path.dirname(__file__), _path)
@@ -360,8 +362,6 @@ class dialogRegUser(QtWidgets.QDialog):
         self.ui = Ui_form_regUser()
         self.ui.setupUi(self)
     def buttonRegistration_clicked(self):
-        # Приложение начинает стакаться в этой функции (при массовой регистрации).
-        # Пока решение такое: создать форму с полосой загрузки.
         self.setCursor(QtCore.Qt.BusyCursor)
         if self.ui.labelCSVSearch.text() != '':
             if checkFileExsist(self.ui.labelCSVSearch.text()):
@@ -404,7 +404,11 @@ class dialogRegUser(QtWidgets.QDialog):
                             alert('Внимание!', 'У регистрируемых пользователей не хватает данных! Перепроверьте данные в таблице.', 'warning')
                     _registratedUsers = []
                     _sendMail = []
+                    _loader.setProgressBar(0, len(_formattedUsers))
+                    _loader.exec()
+                    _counter = 0
                     for _user in _formattedUsers:
+                        _counter += 1
                         _temp = DIRECTORY_API.users().insert(body={
                             'name': {
                                 'givenName': _user['firstname'],
@@ -449,7 +453,10 @@ class dialogRegUser(QtWidgets.QDialog):
                                     'newPassword': _user['password']
                                 })
                             })
+                        _loader.setValue(_counter)
+                    _loader.setLoader()
                     sendMail(_sendMail)
+                    _loader.hide()
                     _filename = saveFile('Выберите место сохранения', 'JSON (*.json)')
                     while _filename == ('', ''):
                         _filename = saveFile('Выберите место сохранения', 'JSON (*.json)')
@@ -468,6 +475,25 @@ class dialogRegUser(QtWidgets.QDialog):
     def buttonAdditionalInfo_clicked(self):
         webbrowser.open(getFullPath('resources/help/registration.html'), new=2)
 
+# Инициализация формы лоадера
+class loader(QtWidgets.QDialog):
+    def __init__(self):
+        super(loader, self).__init__()
+        self.ui = Ui_form_loader()
+        self.ui.setupUi(self)
+        self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
+    def setLoader(self):
+        self.ui.progressBar.setValue(0)
+        self.ui.progressBar.setMaximum(0)
+        self.ui.progressBar.setMinimum(0)
+    def setProgressBar(self, _min:int = 0, _max:int = 100):
+        self.ui.progressBar.setValue(0)
+        self.ui.progressBar.setMaximum(_max)
+        self.ui.progressBar.setMinimum(_min)
+    def setValue(self, _value:int = 0):
+        self.ui.progressBar.setValue(_value if self.ui.progressBar.maximum() != 0 else 0)
+            
+
 # Конечная инициализация переменных оконных приложений
 app = QtWidgets.QApplication([])
 
@@ -477,6 +503,7 @@ _emailSettings = dialogEmailSettings()
 _checkEmail = dialogCheckEmail()
 _dialogEditUser = dialogEditUser()
 _dialogRegUser = dialogRegUser()
+_loader = loader()
 
 # Подпрограмма запуска оконного приложения
 try:
